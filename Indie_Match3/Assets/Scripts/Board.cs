@@ -7,7 +7,7 @@ Author: Quan Nguyen
 Date Made: 29.9.20
 Object(s) holding this script: Board
 Summary:
-
+- Create the boards and instantiate the tiles as child objects
 ***********************************/
 
 public class Board : MonoBehaviour
@@ -43,6 +43,8 @@ public class Board : MonoBehaviour
 
                 //store the tilePrefabs Tile script ar the appropriate position in the array
                 allTiles[row, col] = tile.GetComponent<Tile>();
+
+                //Call the Init method on tile and pass it row and col (which become 
 
                 //To keep things tidy, parent the tiles to the Pieces object in the Hierachy
                 tile.transform.parent = GameObject.Find("Tiles").transform;
