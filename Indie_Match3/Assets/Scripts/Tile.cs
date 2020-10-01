@@ -12,6 +12,8 @@ Summary:
 
 public class Tile : MonoBehaviour
 {
+    public int xIndex; //location of x tile
+    public int yIndex; //location of y tile
     // Start is called before the first frame update
     void Start()
     {
