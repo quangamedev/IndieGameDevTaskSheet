@@ -45,6 +45,8 @@ public class Board : MonoBehaviour
                 allTiles[row, col] = tile.GetComponent<Tile>();
 
                 //Call the Init method on tile and pass it row and col (which become 
+                //Tile.yIndex and pass it a reference to the board which becomes Tile.boardScript;
+                allTiles[row, col].Init(row, col, this);
 
                 //To keep things tidy, parent the tiles to the Pieces object in the Hierachy
                 tile.transform.parent = GameObject.Find("Tiles").transform;

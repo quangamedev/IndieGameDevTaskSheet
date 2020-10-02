@@ -32,7 +32,7 @@ public class Tile : MonoBehaviour
 
     //Sets the xIndex, yIndex and boardScript vars to the ones passed in
     //We are passing in a boardScript in case later we want more than one boardScript in our game
-    //Called by Board.SetupTiles (maybe)
+    //Called by Board.SetupTiles
     public void Init(int x, int y, Board board) //initialises a tile
     {
         xIndex = x; //store the x of the tile as the x var passed in by Board.SetupTiles()
