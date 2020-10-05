@@ -26,4 +26,12 @@ public class GamePiece : MonoBehaviour
     {
         
     }
+    
+    //sets the x and y index by the arguments passed in 
+    //called by 
+    public void SetCoord(int x, int y)
+    {
+        xIndex = x; //set xIndex to the x value passed in by the function call
+        yIndex = y; //set the yIndex to the y value passed in by the function call
+    }
 }

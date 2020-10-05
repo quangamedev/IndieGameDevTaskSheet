@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8782481677742254701}
   - component: {fileID: 7362256316230606245}
+  - component: {fileID: 2851489142119151061}
   m_Layer: 0
   m_Name: Simple Piece Purple
   m_TagString: Untagged
@@ -82,3 +83,17 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &2851489142119151061
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5712881191777494602}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0627b18426b22747893a76d41ff4227, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  xIndex: 0
+  yIndex: 0
