@@ -41,7 +41,7 @@ public class Board : MonoBehaviour
                 //set the tile name to it's
                 tile.name = "Tile (" + row + "," + col + ")";
 
-                //store the tilePrefabs Tile script ar the appropriate position in the array
+                //store the tilePrefabs Tile script at the appropriate position in the array
                 allTiles[row, col] = tile.GetComponent<Tile>();
 
                 //Call the Init method on tile and pass it row and col (which become 

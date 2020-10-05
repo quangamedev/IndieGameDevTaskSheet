@@ -26,9 +26,9 @@ public class GamePiece : MonoBehaviour
     {
         
     }
-    
+
     //sets the x and y index by the arguments passed in 
-    //called by 
+    //called by PieceManager.PlaceGamePiece()
     public void SetCoord(int x, int y)
     {
         xIndex = x; //set xIndex to the x value passed in by the function call

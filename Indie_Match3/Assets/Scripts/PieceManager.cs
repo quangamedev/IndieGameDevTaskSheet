@@ -20,6 +20,7 @@ public class PieceManager : MonoBehaviour
     {
         board = GameObject.Find("Board").GetComponent<Board>(); //store Board class (script)
         allGamePieces = new GamePiece[board.width, board.height]; //constructs a new array of size width by height
+        FillRandom();
     }
 
     //returns a random GameObject from the gamePiecesPrefabs array 
@@ -60,6 +61,40 @@ public class PieceManager : MonoBehaviour
 
     public void FillRandom()
     {
+        for (int row = 0; row < board.width; row++)
+        {
+            for (int col = 0; col < board.height; col++)
+            {
+                //instantiates the piece prefab at coordinates row n col
+                //Instantiate() constructs an Object, so "as GameObject" casts it instead as a GameObject
+                GameObject piece = Instantiate(GetRandomGamePiece()) as GameObject;
 
+                //defensive programming, exit method if someone forgot to place the prefab into the arrays
+                if (piece == null)
+                {
+                    Debug.LogWarning("PIECEMANAGER: Invalid Game Piece!");
+                    return; //break out of the method (fucntion) so next lines dont run
+                }
+
+                //place the game piece on the current tile
+                PlaceGamePiece(piece.GetComponent<GamePiece>(), row, col);
+
+                //set the piece name to it's
+                piece.name = "Pieces (" + row + "," + col + ")";
+
+                //store the gamePiecePrefabs GamePiece script at the appropriate position in the array
+                allGamePieces[row, col] = piece.GetComponent<GamePiece>();
+
+                //Call the Init method on tile and pass it row and col (which become 
+                //Tile.yIndex and pass it a reference to the board which becomes Tile.boardScript;
+                //allGamePieces[row, col].Init(row, col, this);
+
+                //set the game pieces sorting layer to Pieces so they appear in front of the tiles
+                piece.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
+
+                //To keep things tidy, parent the tiles to the Pieces object in the Hierachy
+                piece.transform.parent = GameObject.Find("Pieces").transform;
+            }
+        }
     }
 }
