@@ -24,7 +24,7 @@ public class PieceManager : MonoBehaviour
     }
 
     //returns a random GameObject from the gamePiecesPrefabs array 
-    //called by
+    //called by FillRandom()
     GameObject GetRandomGamePiece()
     {
         //get a random number between 0 and all the game pieces minus 1 in gamePiecesPrefabs array
@@ -41,6 +41,8 @@ public class PieceManager : MonoBehaviour
         return gamePiecePrefabs[randomIdx];
     }
 
+    //place the game piece at destination passed in by function call
+    //Called by FillRandom()
     public void PlaceGamePiece(GamePiece gamePiece, int x, int y)
     {
         if (gamePiece == null)
@@ -59,6 +61,8 @@ public class PieceManager : MonoBehaviour
         gamePiece.SetCoord(x, y);
     }
 
+    //fill the board with random game pieces
+    //Called by Start()
     public void FillRandom()
     {
         for (int row = 0; row < board.width; row++)
