@@ -7,7 +7,8 @@ Author: Quan Nguyen
 Date Made: 3.10.20
 Object(s) holding this script: GamePiece
 Summary:
-- 
+- Initialises a game piece and assigns it an xIndex and yIndex
+- Moves game pieces using Vector3.Lerp
 ***********************************/
 
 public class GamePiece : MonoBehaviour
@@ -15,6 +16,7 @@ public class GamePiece : MonoBehaviour
 
     public int xIndex; //store the current xPos of the game piece
     public int yIndex; //store the current yPos of the game piece
+    private bool isMoving = false; //checks whether the game pieces are moving
     // Start is called before the first frame update
     void Start()
     {
@@ -24,31 +26,37 @@ public class GamePiece : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        /*if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             Move((int)transform.position.x - 1, (int)transform.position.y, 0.5f);
         }
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             Move((int)transform.position.x + 1, (int)transform.position.y, 0.5f);
-        }
+        }*/
     }
 
     //sets the x and y index by the arguments passed in 
     //called by PieceManager.PlaceGamePiece()
+    //called by MoveRoutine() when a game piece is moved
     public void SetCoord(int x, int y)
     {
         xIndex = x; //set xIndex to the x value passed in by the function call
         yIndex = y; //set the yIndex to the y value passed in by the function call
     }
 
-    //called by
+    //called by (Update)
     public void Move(int destX, int destY, float timeToMove)
     {
-        //Calls the MoveRoutine() below and pass in a vector 3 and time to move
-        StartCoroutine(MoveRoutine(new Vector3(destX, destY, 0), timeToMove));
+        if (isMoving == false) //game pieces are not currently moving
+        {
+            //Calls the MoveRoutine() below and pass in a vector 3 and time to move
+            StartCoroutine(MoveRoutine(new Vector3(destX, destY, 0), timeToMove));
+        }
     }
 
+    //Lerps the game pieces to the destination passed in
+    //over the amount of time passes in in timeToMove
     //caled by Move() when a piece moves
     IEnumerator MoveRoutine(Vector3 destination, float timeToMove)
     {
@@ -57,6 +65,9 @@ public class GamePiece : MonoBehaviour
 
         //bool flag used to determine whether we have arrived at the destination passed in
         bool reachedDestination = false;
+
+        //the move has started so set isMoving to true
+        isMoving = true;
 
         //how many seconds have passed since we started moving
         float elapsedTime = 0f;
@@ -71,6 +82,12 @@ public class GamePiece : MonoBehaviour
 
                 //set the game piece to exactly the destination
                 transform.position = destination;
+
+                //update the game piece with its new coordinates by  changing x and y index.
+                SetCoord((int)destination.x, (int)destination.y);
+
+                //break out of the while loop immediately to not run all the remaining code
+                break;
             }
 
             //increment elapsedTime by the amount of time since
@@ -86,5 +103,7 @@ public class GamePiece : MonoBehaviour
             //wait until next frame
             yield return null;
         }
+
+        isMoving = false; //game piece is no longer moving
     }
 }

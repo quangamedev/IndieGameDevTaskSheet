@@ -15,12 +15,15 @@ public class PieceManager : MonoBehaviour
     public GameObject[] gamePiecePrefabs; //an array of all game pieces stored as gameobjects
     private GamePiece[,] allGamePieces; //a 2-dimensional array holding all the current game pieces' scripts (GamePiece.cs)
     private Board board; //reference to Board class
+    private Tile clickedTile; //the tile that the playter clicks on first to move a game piece
+    private Tile targetTile; //the tile that the player wants the game piece to move to 
     // Start is called before the first frame update
     void Start()
     {
         board = GameObject.Find("Board").GetComponent<Board>(); //store Board class (script)
         allGamePieces = new GamePiece[board.width, board.height]; //constructs a new array of size width by height
-        FillRandom();
+
+        FillRandom(); //Fills the board with random pieces at the start of the level
     }
 
     //returns a random GameObject from the gamePiecesPrefabs array 
@@ -100,5 +103,52 @@ public class PieceManager : MonoBehaviour
                 piece.transform.parent = GameObject.Find("Pieces").transform;
             }
         }
+    }
+
+    //sets the clickedTiles var to the tile passed in
+    //called by ()
+    public void ClickTile(Tile tile)
+    {
+        //tiles that can be clicked are always = null
+        if(clickedTile == null)
+        {
+            //set the clickedTile to the tile passed in by ()
+            clickedTile = tile;
+        }
+    }
+
+    //if a tile has been clicked, sets the targetTile var to the one passed in
+    //called by ()
+    public void DragToTile(Tile tile)
+    {
+        //if there is a tile that has been clicked on
+        if (clickedTile != null)
+        {
+            //sets the target tile to the tile passed in
+            targetTile = tile;
+
+            Debug.Log("Clicked tile" + tile.name);
+        }
+    }
+
+    //called by ()
+    public void ReleaseTile()
+    {
+        //clickedTile and targetTile are both valid tiles
+        if (clickedTile != null && targetTile != null)
+        {
+            //call SwitcheTiles() below to make clickTile and targetTile swap positions.
+            SwitchTiles(clickedTile, targetTile);
+        }
+    }
+
+    //called by ()
+    void SwitchTiles(Tile tileClicked, Tile tileTargeted)
+    {
+        //add code to switch the corresponding GamePieces to the two tiles passed in
+
+        //reset the clickedTile and targetTile so tiles can be clicked again
+        clickedTile = null;
+        targetTile = null;
     }
 }
