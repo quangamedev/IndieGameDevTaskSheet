@@ -39,4 +39,35 @@ public class Tile : MonoBehaviour
         yIndex = y; //store the y of the tile as the x var passed in by Board.SetupTiles()
         boardScript = board; //store the Board script of the tile as the boardScripot var passed in by Board.SetupTiles()
     }
+
+    //a tile has been clicked on
+    private void OnMouseDown()
+    {
+        if (pieceManager != null)
+        {
+            //call ClickTile() and pass in the tile that has been clicked
+            pieceManager.ClickTile(this);
+        }
+
+    }
+
+    //a tile has been entered by the mouse
+    private void OnMouseOver()
+    {
+        if (pieceManager != null)
+        {
+            //call DragToTile and pass in the tile that has been rolled over
+            pieceManager.DragToTile(this);
+        }
+    }
+
+    //the mouse has been released over a tile
+    private void OnMouseUp()
+    {
+        if (pieceManager != null)
+        {
+            //call ReleaseTile() to make the switch between the clickedTile and targetTile
+            pieceManager.ReleaseTile();
+        }
+    }
 }

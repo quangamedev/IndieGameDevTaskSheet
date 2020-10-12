@@ -7,7 +7,8 @@ Author: Quan Nguyen
 Date Made: 29.9.20
 Object(s) holding this script: Board
 Summary:
-- Name explanatory
+- Initialises a tile and assigns it an x and y index, and the board it is on
+- Handles the Mouse input events and sends them to the PieceManager class
 ***********************************/
 
 public class PieceManager : MonoBehaviour
@@ -106,7 +107,7 @@ public class PieceManager : MonoBehaviour
     }
 
     //sets the clickedTiles var to the tile passed in
-    //called by ()
+    //called by Tile.OnMouseDown() wqhen a tile is clicked
     public void ClickTile(Tile tile)
     {
         //tiles that can be clicked are always = null
@@ -114,11 +115,13 @@ public class PieceManager : MonoBehaviour
         {
             //set the clickedTile to the tile passed in by ()
             clickedTile = tile;
+
+            Debug.Log("Clicked tile" + tile.name);
         }
     }
 
     //if a tile has been clicked, sets the targetTile var to the one passed in
-    //called by ()
+    //called by Tile.OnMouseOver() when a tile has been entered by the mouse
     public void DragToTile(Tile tile)
     {
         //if there is a tile that has been clicked on
@@ -131,7 +134,8 @@ public class PieceManager : MonoBehaviour
         }
     }
 
-    //called by ()
+    //checks if the clickedTile and targetTile are valid tiles and calls SwitchTiles() below to swap their places
+    //called by Tile.OnMouseUp() when the mouse button is released over a tile
     public void ReleaseTile()
     {
         //clickedTile and targetTile are both valid tiles
@@ -141,8 +145,8 @@ public class PieceManager : MonoBehaviour
             SwitchTiles(clickedTile, targetTile);
         }
     }
-
-    //called by ()
+    //switches the places of the clickedTile and the targetTile and resets both to null so another switch can be made
+    //called by ReleaseTile()
     void SwitchTiles(Tile tileClicked, Tile tileTargeted)
     {
         //add code to switch the corresponding GamePieces to the two tiles passed in
@@ -151,4 +155,5 @@ public class PieceManager : MonoBehaviour
         clickedTile = null;
         targetTile = null;
     }
+
 }
