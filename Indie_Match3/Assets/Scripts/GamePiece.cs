@@ -17,6 +17,24 @@ public class GamePiece : MonoBehaviour
     public int xIndex; //store the current xPos of the game piece
     public int yIndex; //store the current yPos of the game piece
     private bool isMoving = false; //checks whether the game pieces are moving
+    private PieceManager pieceManager; //a reference to the piece manager class
+
+    //the colour of the piece, defined in the Inspector using the enum below
+    //the type of this var must be the same as the name of the enum used to link them
+    public MatchValue matchValue;
+
+    //assign a constant to each colour of piece
+    //this is used to determine whether pieces match, even if they have different sprites
+    public enum MatchValue
+    {
+        blue,
+        green,
+        orange,
+        purple,
+        red,
+        yellow
+    };
+
     // Start is called before the first frame update
     void Start()
     {
@@ -26,14 +44,22 @@ public class GamePiece : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        /*if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            Move((int)transform.position.x - 1, (int)transform.position.y, 0.5f);
-        }
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            Move((int)transform.position.x + 1, (int)transform.position.y, 0.5f);
-        }*/
+        //if (Input.GetKeyDown(KeyCode.LeftArrow))
+        //{
+        //    Move((int)transform.position.x - 1, (int)transform.position.y, 0.5f);
+        //}
+        //if (Input.GetKeyDown(KeyCode.RightArrow))
+        //{
+        //    Move((int)transform.position.x + 1, (int)transform.position.y, 0.5f);
+        //}
+    }
+
+    //initialises the GamePiece to give it access to the PieceManager class
+    //called by
+    public void Init(PieceManager pm)
+    {
+        //set the pieceManager var to the one passed in to the function
+        pieceManager = pm;
     }
 
     //sets the x and y index by the arguments passed in 
@@ -80,11 +106,9 @@ public class GamePiece : MonoBehaviour
             {
                 reachedDestination = true; //break the loop
 
-                //set the game piece to exactly the destination
-                transform.position = destination;
-
-                //update the game piece with its new coordinates by  changing x and y index.
-                SetCoord((int)destination.x, (int)destination.y);
+                //call the PlaceGamePiece function to set the pieces final pos, to set it's x and y index and to add it to the allGamePieces array
+                //PlaceGamePiece receives 2 ints, so recast the destination x and y as ints
+                pieceManager.PlaceGamePiece(this, (int)destination.x, (int)destination.y);
 
                 //break out of the while loop immediately to not run all the remaining code
                 break;
