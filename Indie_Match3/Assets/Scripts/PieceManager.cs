@@ -5,7 +5,7 @@ using UnityEngine;
 /***********************************
 Author: Quan Nguyen
 Date Made: 29.9.20
-Object(s) holding this script: Board
+Object(s) holding this script: PieceManager
 Summary:
 - Initialises a tile and assigns it an x and y index, and the board it is on
 - Handles the Mouse input events and sends them to the PieceManager class
@@ -16,7 +16,7 @@ Summary:
 public class PieceManager : MonoBehaviour
 {
     public GameObject[] gamePiecePrefabs; //an array of all game pieces stored as gameobjects
-    private GamePiece[,] allGamePieces; //a 2-dimensional array holding all the current game pieces' scripts (GamePiece.cs)
+    public GamePiece[,] allGamePieces; //a 2-dimensional array holding all the current game pieces' scripts (GamePiece.cs)
     private Board board; //reference to Board class
     private Tile clickedTile; //the tile that the playter clicks on first to move a game piece
     private Tile targetTile; //the tile that the player wants the game piece to move to
@@ -81,8 +81,9 @@ public class PieceManager : MonoBehaviour
     }
 
     //Function that returns true or false depending on if the x, y coordinates passed in are within the boundaries of the board
-    //Called by PlaceGamePiece above when adding a piece to the allGamePieces array
-    bool IsWithinBounds(int x, int y)
+    //Called by PlaceGamePiece() above when adding a piece to the allGamePieces array
+    //called by MatchManager.FindMatches() to check the piece we start the search from is whithin the board
+    public bool IsWithinBounds(int x, int y)
     {
         //checks to make sure x is between 0 between 0 and the width -1 and y is whitin 0 and height -1
         //return a bool
