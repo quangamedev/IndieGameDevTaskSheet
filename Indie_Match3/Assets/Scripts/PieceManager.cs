@@ -83,6 +83,7 @@ public class PieceManager : MonoBehaviour
     //Function that returns true or false depending on if the x, y coordinates passed in are within the boundaries of the board
     //Called by PlaceGamePiece() above when adding a piece to the allGamePieces array
     //called by MatchManager.FindMatches() to check the piece we start the search from is whithin the board
+    //called by MatchManager.FindMatches() to check whether the next piece we are checking for matches is within the board
     public bool IsWithinBounds(int x, int y)
     {
         //checks to make sure x is between 0 between 0 and the width -1 and y is whitin 0 and height -1
