@@ -6,16 +6,17 @@ using System.Linq; //used so we can combine lists into a single list using the U
 /***********************************
 Author: Quan Nguyen
 Date Made: 29.9.20
-Object(s) holding this script: Manager
+Object(s) holding this script: MatchManager
 Summary:
-Initialises a tile and assigns it an x, y INdex and the board it is on
+- Find Matches using FindMatchesAt()
+- Highlights matches using HighlightMatches()
+- Turns off highlights using HighlightTilesOff()
 ***********************************/
 
 public class MatchManager : MonoBehaviour
 {
     private PieceManager pieceManager; //a reference to the PieceManager class
     private Board board;
-    private Tile tile;
 
     // Start is called before the first frame update
     void Start()
@@ -134,9 +135,9 @@ public class MatchManager : MonoBehaviour
         }
     }
 
-    //Calles FindMatches() and searches in an upwards and downwards direction
+    //Calls FindMatches() and searches in an upwards and downwards direction
     //return a list of all vertical matches
-    //called by 
+    //called by FindMatchesAt()
     List<GamePiece> FindVerticalMatches(int startX, int startY, int minLength = 3)
     {
         //calls FindMatches() and passess in a direction to search upwards and then downwards
@@ -172,6 +173,9 @@ public class MatchManager : MonoBehaviour
         }
     }
 
+    //Calls FindMatches() and searches in an left and right
+    //return a list of all vertical matches
+    //called by FindMatchesAt()
     List<GamePiece> FindHorizontalMatches(int startX, int startY, int minLength = 3)
     {
         //calls FindMatches() and passess in a direction to search left and then right
@@ -194,7 +198,7 @@ public class MatchManager : MonoBehaviour
         //use the System.Linq.Union() method to combine the two Lists
         //var will default to the first data type that is put in it (this case, a List)
         //Union() returns an IEnumerable, so we use ToList() to convert combined List to a List (instead of IEnumerable)
-        var combinedMatches = leftMatches.Union(rightMatches).ToList();
+        List<GamePiece> combinedMatches = leftMatches.Union(rightMatches).ToList();
 
         //check whether the combined matches List is long enough for a winning match (default of 3)
         if (combinedMatches.Count >= minLength)
@@ -217,39 +221,66 @@ public class MatchManager : MonoBehaviour
             for (int col = 0; col < board.height; col++)
             {
                 //makes sure row n col are within bounds
-                if (pieceManager.IsWithinBounds(row,col) == false)
+                if (pieceManager.IsWithinBounds(row, col) == false)
                 {
                     break; //break out of loop if row and col not within bounds
                 }
 
-                //calls FindHorizontalMatches() and FindVerticalMatches() to find matches
-                //row and col represents the tile that is being checked
-                List<GamePiece> horizMatches = FindHorizontalMatches(row, col);
-                List<GamePiece> vertiMatches = FindVerticalMatches(row, col);
+                //turn off highlights on the whole board so we are ready to highlight the current matches
+                HighlightTilesOff(row, col);
 
-                //we cannot use the System.Linq.Union() method to combine to Lists if any of them are null
-                //so if they are null, we need to set them to empty Lists
-                if (horizMatches == null)
-                {
-                    horizMatches = new List<GamePiece>();
-                }
-                if (vertiMatches == null)
-                {
-                    vertiMatches = new List<GamePiece>();
-                }
-
-                //use the System.Linq.Union() method to combine the two Lists
-                //var will default to the first data type that is put in it (this case, a List)
-                //Union() returns an IEnumerable, so we use ToList() to convert combined List to a List (instead of IEnumerable)
-                var allMatches = horizMatches.Union(vertiMatches).ToList();
+                //return a list of all matches
+                List<GamePiece> allMatches = FindMatchesAt(row, col);
 
                 //for each matching GamePiece found in allMatches, change their color to red
                 foreach (GamePiece matchedPiece in allMatches)
                 {
-                    //change the tiles color accessing the GamePieces' x and y indexes
-                    board.allTiles[matchedPiece.xIndex, matchedPiece.yIndex].GetComponent<SpriteRenderer>().color = Color.red;
+                    //highlight the tile at the matching pieces x and y index
+                    HighlightTilesOn(matchedPiece.xIndex, matchedPiece.yIndex);
                 }
             }
         }
+    }
+
+    //resets the color of the tile at the coordinates passed in
+    //called by 
+    void HighlightTilesOff(int x, int y)
+    {
+        //change the colour of the tiles back to white and set transparency
+        board.allTiles[x, y].GetComponent<SpriteRenderer>().color = new Color(255, 255, 255, 0.625f);
+    }
+
+    //Turns the tile at the coordinate passed in to red to show they are matches
+    //called by 
+    void HighlightTilesOn(int x, int y)
+    {
+        //change the colour of the tiles to red
+        board.allTiles[x, y].GetComponent<SpriteRenderer>().color = new Color(255, 0, 0, 0.625f);
+    }
+
+    //Finds horizontal and vertical matches and combine them into an allMatches List that is then returned.
+    //called by HighlightMatches() to highlight matching pieces.
+    private List<GamePiece> FindMatchesAt(int x, int y, int minLength = 3)
+    {
+        //declares and populate the lists to hold horizontal and vertical matches
+        List<GamePiece> horizMatches = FindHorizontalMatches(x, y, 3);
+        List<GamePiece> vertiMatches = FindVerticalMatches(x, y, 3);
+
+        //we cannot use the System.Linq.Union() method to combine to Lists if any of them are null
+        //so if they are null, we need to set them to empty Lists
+        if (horizMatches == null)
+        {
+            horizMatches = new List<GamePiece>();
+        }
+        if (vertiMatches == null)
+        {
+            vertiMatches = new List<GamePiece>();
+        }
+
+        //use the System.Linq.Union() method to combine the two Lists
+        //var will default to the first data type that is put in it (this case, a List)
+        //Union() returns an IEnumerable, so we use ToList() to convert combined List to a List (instead of IEnumerable)
+        List<GamePiece> allMatches = horizMatches.Union(vertiMatches).ToList();
+        return allMatches;
     }
 }
