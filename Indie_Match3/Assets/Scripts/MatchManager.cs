@@ -9,7 +9,7 @@ Date Made: 29.9.20
 Object(s) holding this script: MatchManager
 Summary:
 - Find Matches using FindMatchesAt()
-- Highlights matches using HighlightMatches()
+- Highlights matches using HighlightMatches() or HighlightMatchesAt()
 - Turns off highlights using HighlightTilesOff()
 ***********************************/
 
@@ -27,7 +27,6 @@ public class MatchManager : MonoBehaviour
         //gets access to the Board class
         board = GameObject.Find("Board").GetComponent<Board>();
 
-        HighlightMatches();
         Debug.Log("Reading IsWithinBounds() as " + pieceManager.IsWithinBounds(0, 0));
     }
 
@@ -226,24 +225,32 @@ public class MatchManager : MonoBehaviour
                     break; //break out of loop if row and col not within bounds
                 }
 
-                //turn off highlights on the whole board so we are ready to highlight the current matches
-                HighlightTilesOff(row, col);
-
-                //return a list of all matches
-                List<GamePiece> allMatches = FindMatchesAt(row, col);
-
-                //for each matching GamePiece found in allMatches, change their color to red
-                foreach (GamePiece matchedPiece in allMatches)
-                {
-                    //highlight the tile at the matching pieces x and y index
-                    HighlightTilesOn(matchedPiece.xIndex, matchedPiece.yIndex);
-                }
+                HighlightMatchesAt(row, col);
             }
         }
     }
 
+    //checks for matches at the coordinates passed in as arguments, and if it finds them, calls HighlightTilesOn() to highlight the match
+    //called by HighlightMatches() when checking the whole board for matches
+    //called by PieceManager.SwitchTilesRoutine() when 2 game pieces are switched
+    public void HighlightMatchesAt(int row, int col)
+    {
+        //turn off highlights on the whole board so we are ready to highlight the current matches
+        HighlightTilesOff(row, col);
+
+        //return a list of all matches
+        List<GamePiece> allMatches = FindMatchesAt(row, col);
+
+        //for each matching GamePiece found in allMatches, change their color to red
+        foreach (GamePiece matchedPiece in allMatches)
+        {
+            //highlight the tile at the matching pieces x and y index
+            HighlightTilesOn(matchedPiece.xIndex, matchedPiece.yIndex);
+        }
+    }
+
     //resets the color of the tile at the coordinates passed in
-    //called by 
+    //called by HighlightMatchesAt()
     void HighlightTilesOff(int x, int y)
     {
         //change the colour of the tiles back to white and set transparency
@@ -251,7 +258,7 @@ public class MatchManager : MonoBehaviour
     }
 
     //Turns the tile at the coordinate passed in to red to show they are matches
-    //called by 
+    //called by HighlightMatchesAt()
     void HighlightTilesOn(int x, int y)
     {
         //change the colour of the tiles to red
@@ -260,7 +267,7 @@ public class MatchManager : MonoBehaviour
 
     //Finds horizontal and vertical matches and combine them into an allMatches List that is then returned.
     //called by HighlightMatches() to highlight matching pieces.
-    private List<GamePiece> FindMatchesAt(int x, int y, int minLength = 3)
+    public List<GamePiece> FindMatchesAt(int x, int y, int minLength = 3)
     {
         //declares and populate the lists to hold horizontal and vertical matches
         List<GamePiece> horizMatches = FindHorizontalMatches(x, y, 3);

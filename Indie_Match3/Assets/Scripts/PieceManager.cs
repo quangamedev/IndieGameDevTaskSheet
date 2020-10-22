@@ -18,6 +18,7 @@ public class PieceManager : MonoBehaviour
     public GameObject[] gamePiecePrefabs; //an array of all game pieces stored as gameobjects
     public GamePiece[,] allGamePieces; //a 2-dimensional array holding all the current game pieces' scripts (GamePiece.cs)
     private Board board; //reference to Board class
+    private MatchManager matchManager; //reference to the MatchManager class
     private Tile clickedTile; //the tile that the playter clicks on first to move a game piece
     private Tile targetTile; //the tile that the player wants the game piece to move to
     private GamePiece clickedPiece;
@@ -27,6 +28,7 @@ public class PieceManager : MonoBehaviour
     void Start()
     {
         board = GameObject.Find("Board").GetComponent<Board>(); //store Board class (script)
+        matchManager = GameObject.Find("MatchManager").GetComponent<MatchManager>(); //store the MatchManager class
         allGamePieces = new GamePiece[board.width, board.height]; //constructs a new array of size width by height
 
         FillRandom(); //Fills the board with random pieces at the start of the level
@@ -200,17 +202,43 @@ public class PieceManager : MonoBehaviour
         clickedTile = null;
         targetTile = null;
     }
-    //switches the places of the clickedTile and the targetTile and resets both to null so another switch can be made
+    
+    //Calles SwitchTilesRoutine() below to move pieces and highlight matches
     //called by ReleaseTile()
     void SwitchTiles(Tile tileClicked, Tile tileTargeted)
+    {
+        StartCoroutine(SwitchTilesRoutine(tileClicked, tileTargeted));
+    }
+
+    //switches the places of the clickedTile and targetTile
+    //called by SwitchTiles() above when two pieces are swapped
+    IEnumerator SwitchTilesRoutine(Tile tileClicked, Tile tileTargeted)
     {
         //set the pieces positions to the positions of the tiles
         clickedPiece = allGamePieces[tileClicked.xIndex, tileClicked.yIndex];
         targetPiece = allGamePieces[tileTargeted.xIndex, tileTargeted.yIndex];
 
         //commits the swap by moving the two chosen pieces
-        clickedPiece.Move(targetPiece.xIndex, targetPiece.yIndex, 0.5f);
-        targetPiece.Move(clickedPiece.xIndex, clickedPiece.yIndex, 0.5f);
-    }
+        clickedPiece.Move(targetPiece.xIndex, targetPiece.yIndex, swapTime);
+        targetPiece.Move(clickedPiece.xIndex, clickedPiece.yIndex, swapTime);
 
+        //yield so the pieces can move and the array updates with the new positions
+        yield return new WaitForSeconds(swapTime);
+
+        //return a list of matches for the clicked and targeted piece
+        List<GamePiece> tileClickedMatches = matchManager.FindMatchesAt(tileClicked.xIndex, tileClicked.yIndex);
+        List<GamePiece> tileTargetedMatches = matchManager.FindMatchesAt(tileTargeted.xIndex, tileTargeted.yIndex);
+
+        //if neither of the lists have anything in them, we have a match
+        if(tileClickedMatches.Count == 0 && tileTargetedMatches.Count == 0)
+        {
+            //commits the swap by moving the two chosen pieces
+            clickedPiece.Move(tileClicked.xIndex, tileClicked.yIndex, swapTime);
+            targetPiece.Move(tileTargeted.xIndex, tileTargeted.yIndex, swapTime);
+        }
+
+        //after the pieces have moved, highlight the tiles of any matches
+        matchManager.HighlightMatchesAt(tileClicked.xIndex, tileClicked.yIndex);
+        matchManager.HighlightMatchesAt(tileTargeted.xIndex, tileTargeted.yIndex);
+    }
 }
