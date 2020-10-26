@@ -107,17 +107,25 @@ public class MatchManager : MonoBehaviour
             //if the next piece is within the bounds of the board create a var to store the next piece
             GamePiece nextPiece = pieceManager.allGamePieces[nextX, nextY];
 
-            //if the nextPiece matches the startPiece
-            //make sure that List does not contain nextPiece
-            if(nextPiece.matchValue == startPiece.matchValue && !matches.Contains(nextPiece))
+            //check to see if our game piece is null
+            if(nextPiece == null)
             {
-                //we have a match!
-                //add the next game piece to our list of matches
-                matches.Add(nextPiece);
+                break; //break out of the search
             }
-            else //the next piece is not a match
+            else //the game piece is valid
             {
-                break;
+                //if the nextPiece matches the startPiece
+                //make sure that List does not contain nextPiece
+                if (nextPiece.matchValue == startPiece.matchValue && !matches.Contains(nextPiece))
+                {
+                    //we have a match!
+                    //add the next game piece to our list of matches
+                    matches.Add(nextPiece);
+                }
+                else //the next piece is not a match
+                {
+                    break;
+                }
             }
         }
 
@@ -267,6 +275,7 @@ public class MatchManager : MonoBehaviour
 
     //Finds horizontal and vertical matches and combine them into an allMatches List that is then returned.
     //called by HighlightMatches() to highlight matching pieces.
+    //called by PieceManager.SwitchTilesRoutine() to find whether the swapped tiles are a match
     public List<GamePiece> FindMatchesAt(int x, int y, int minLength = 3)
     {
         //declares and populate the lists to hold horizontal and vertical matches
@@ -289,5 +298,24 @@ public class MatchManager : MonoBehaviour
         //Union() returns an IEnumerable, so we use ToList() to convert combined List to a List (instead of IEnumerable)
         List<GamePiece> allMatches = horizMatches.Union(vertiMatches).ToList();
         return allMatches;
+    }
+
+    //checks the piece at x and y passed in and returns true if there is a match
+    //called by
+    public bool HasMatchOnFill(int x, int y, int minLength = 3)
+    {
+        //call FindMatches() to populate 2 Lists of matches to the left and down
+        List<GamePiece> leftMatches = FindMatches(x, y, new Vector2(-1, 0), minLength);
+        List<GamePiece> downwardMatches = FindMatches(x, y, new Vector2(0, -1), minLength);
+
+        //we cannot use List.Count on a null List, so if we didnt find matches, set our List to a new empty List so we dont get errors
+        if(leftMatches == null)
+        {
+            leftMatches = new List<GamePiece>();
+        }
+        if (downwardMatches == null)
+        {
+            downwardMatches = new List<GamePiece>();
+        }
     }
 }

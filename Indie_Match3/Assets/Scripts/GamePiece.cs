@@ -71,7 +71,8 @@ public class GamePiece : MonoBehaviour
         yIndex = y; //set the yIndex to the y value passed in by the function call
     }
 
-    //called by (Update)
+    //calls the MoveRoutine below to move game pieces
+    //called by PieceManager.SwitchTilesRoutine() to find whether swapped tiles are a match
     public void Move(int destX, int destY, float timeToMove)
     {
         if (isMoving == false) //game pieces are not currently moving
