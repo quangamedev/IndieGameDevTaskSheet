@@ -1,6 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
+using System.Linq; //used to we can combine lists into a single list using the Union() method
+using System.Runtime.CompilerServices;
 
 /***********************************
 Author: Quan Nguyen
@@ -117,44 +120,75 @@ public class PieceManager : MonoBehaviour
     //Called by Start()
     public void FillBoard()
     {
+        int maxLoops = 100; //the maximum amount of times we let our while loop go round
+        int loops = 0; //the number of times while has looped so far
+
+        //loop through the board
         for (int row = 0; row < board.width; row++)
         {
             for (int col = 0; col < board.height; col++)
             {
-                FillRandomAt(row, col);
+                GamePiece piece = FillRandomAt(row, col);
+
+                //keep looping until the game piece at row, col has no matches
+                //HasMatchOnFill() returns true when the random piece made has matches
+                while(matchManager.HasMatchOnFill(row, col) == true)
+                {
+                    //clear the starting piece that has matches
+                    ClearPieceAt(row, col);
+
+                    //place a new random game piece with FillRandomAt()
+                    piece = FillRandomAt(row, col);
+
+                    //add 1 to the number of loops
+                    loops++;
+
+                    //if we have done more than 100 loops
+                    if(loops > maxLoops)
+                    {
+                        //set the loops to 0 and break out of the loop
+                        loops = 0;
+                        Debug.LogWarning("WARNING: Fill board has exceeded the maximum loops!");
+                        break;
+                    }
+                }
             }
         }
     }
 
     //puts a random game piece at the coordinates passed in as arguments
     //called by FillBoard() when the board is filled at the start of the game
-    private void FillRandomAt(int row, int col)
+    private GamePiece FillRandomAt(int row, int col)
     {
         //instantiates the piece prefab at coordinates row n col
         //Instantiate() constructs an Object, so "as GameObject" casts it instead as a GameObject
         GameObject randomPiece = Instantiate(GetRandomGamePiece()) as GameObject;
 
-        //set the piece name to it's
-        randomPiece.name = "Pieces (" + row + "," + col + ")";
-
-        //store the gamePiecePrefabs GamePiece script at the appropriate position in the array
-        allGamePieces[row, col] = randomPiece.GetComponent<GamePiece>();
-
-        //set the game pieces sorting layer to Pieces so they appear in front of the tiles
-        randomPiece.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
-
-        //To keep things tidy, parent the tiles to the randomPieces object in the Hierachy
-        randomPiece.transform.parent = GameObject.Find("Pieces").transform;
-
         //defensive programming to make sure that randomPiece is a valid GamePiece
         if (randomPiece != null)
         {
+            //set the piece name to it's
+            randomPiece.name = "Pieces (" + row + "," + col + ")";
+
+            //store the gamePiecePrefabs GamePiece script at the appropriate position in the array
+            allGamePieces[row, col] = randomPiece.GetComponent<GamePiece>();
+
+            //set the game pieces sorting layer to Pieces so they appear in front of the tiles
+            randomPiece.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
+
+            //To keep things tidy, parent the tiles to the randomPieces object in the Hierachy
+            randomPiece.transform.parent = GameObject.Find("Pieces").transform;
+
             //initialises the GamePiece to give it access to the PieceManager
             randomPiece.GetComponent<GamePiece>().Init(this);
 
             //place the game piece on the current tile
             PlaceGamePiece(randomPiece.GetComponent<GamePiece>(), row, col);
+
+            //return the GamePiece to the function calling this
+            return randomPiece.GetComponent<GamePiece>();
         }
+        return null;
     }
 
     //sets the clickedTiles var to the tile passed in
@@ -242,10 +276,8 @@ public class PieceManager : MonoBehaviour
             }
             else
             {
-                //clear the pieces that made a match
-                //our code will know that we want to use the overloaded version of ClearPieceAt() because we passed in a List
-                ClearPieceAt(tileClickedMatches);
-                ClearPieceAt(tileTargetedMatches);
+                //call ClearAndRefillBoard() and pass it a combined list of tileClickedMatches and tileTargetedMatches to clear
+                ClearAndRefillBoard(tileClickedMatches.Union(tileTargetedMatches).ToList());
             }
 
             //yield so the pieces can move back and the array updates with the new positions
@@ -259,6 +291,7 @@ public class PieceManager : MonoBehaviour
     //clears matched pieces at the location passed in
     //called by ClearBoard() to clear all pieces on the board
     //called by the overloaded ClearPieceAt(List<GamePiece>) when clearing out a list of matches
+    //called by FillBoard when matches are made at the start of the level
     public void ClearPieceAt(int x, int y)
     {
         //store the location at the x and y arguments in a variable
@@ -302,5 +335,139 @@ public class PieceManager : MonoBehaviour
                 ClearPieceAt(row, col);
             }
         }
+    }
+
+    //called by overloaded CollapseColumn() function
+    List<GamePiece> CollapseColumn (int column, float collapseTime = 0.1f)
+    {
+        //create a new List of game pieces that we will reurn from this method
+        List<GamePiece> movingPieces = new List<GamePiece>();
+
+        //loop from 0 in the y all the way to height - 1
+        for (int i = 0; i < board.height; i++)
+        {
+            //i is looking for spaces in the column (pieces that are null)
+            if (allGamePieces[column, i] == null)
+            {
+                //we have found an empty space, so leave i at the y value of the first empty space and begin looping j, starting at the square above i
+                for (int j = i + 1; j < board.height; j++)
+                {
+                    //j is looking for actual game pieces (pieces that are valid)
+                    if(allGamePieces[column, j] != null)
+                    {
+                        //move the first valid game piece j finds to the y value of the first empty space stored in i
+                        allGamePieces[column, j].Move(column, i, collapseTime);
+
+                        //in order to add the right piece into the List, we cant wair for GamePiece.MoveRoutine() to update the array and call SetCoord(),
+                        //which happens after the move is finished. So we do it manually here
+                        allGamePieces[column, i] = allGamePieces[column, j];
+                        allGamePieces[column, i].SetCoord(column, i);
+
+                        //check that the game piece we moved isnt already in the List we return
+                        if(!movingPieces.Contains(allGamePieces[column, i]))
+                        {
+                            //add  the piece we just moved to the List we return
+                            movingPieces.Add(allGamePieces[column, i]);
+                        }
+
+                        //set the empty sapce just created to null
+                        allGamePieces[column, j] = null;
+
+                        //break out of j and hand back over to i to start the process over again
+                        break;
+                    }
+                }
+            }
+        }
+        //return the List of pieces that have moved to the function calling this
+        return movingPieces;
+    }
+
+    //overloaded version of CollapseColum() which receives a List of gamepieces and returns a List of gamepieces containing the pieces that have moved
+    //called by SwitchTilesRoutine() after pieces are cleared
+    List<GamePiece> CollapseColumn (List<GamePiece> gamePieces)
+    {
+        //make the List of moving game pieces we will return
+        List<GamePiece> movingPieces = new List<GamePiece>();
+
+        //use GetColumns() to return a List of columns we want to collapse
+        List<int> columnsToCollapse = GetColumns(gamePieces);
+
+        //loops through the List of ints representing columns to collapse
+        foreach (int column in columnsToCollapse)
+        {
+            //keep a running List of every piece that has moved by combining the Lists the ORIGINAL Collapse Column returns together
+            movingPieces = movingPieces.Union(CollapseColumn(column)).ToList();
+        }
+        //return the List of pieces that have moved to the function calling tihs
+        return movingPieces;
+    }
+
+    //receives a list of game pieces and return their column numbers
+    //called by overloaded CollapseColumn()
+    List <int> GetColumns(List<GamePiece> gamePieces)
+    {
+        //the list of integers this function returns
+        List<int> columns = new List<int>();
+
+        //loop throught the List of game pieces passed in
+        foreach (GamePiece piece in gamePieces)
+        {
+            //make sure our List of columns doesnt already contain the pieces x
+            if (!columns.Contains(piece.xIndex))
+            {
+                //add the xIndex (column number) to the columns List
+                columns.Add(piece.xIndex);
+            }
+        }
+
+        //return the List of column numbers to the function calling this
+        return columns;
+    }
+
+    //called by
+    void ClearAndRefillBoard(List<GamePiece> gamePieces)
+    {
+        //call the coroutine below
+        StartCoroutine(ClearAndRefillBoardRoutine(gamePieces));
+    }
+
+    //called by ClearAndRefillBoard() above when collapsing columns
+    IEnumerator ClearAndRefillBoardRoutine(List<GamePiece> gamePieces)
+    {
+        //clear and collapse
+        StartCoroutine(ClearAndCollapseRoutine(gamePieces));
+
+        yield return null; //wait until it is finished
+
+        //refill the board
+    }
+
+    //called by ClearAndRefillBoardRoutine() above
+    IEnumerator ClearAndCollapseRoutine(List<GamePiece> gamePieces)
+    {
+        //Pieces that have moved in this collapse
+        List<GamePiece> movingPieces = new List<GamePiece>();
+
+        //A list of matches formed by our moving pieces after collapsing
+        List<GamePiece> matches = new List<GamePiece>();
+
+        //a small delay in between switching tiles and clearing game pieces
+        yield return new WaitForSeconds(0.25f);
+
+        //has the collapsing of tiles finding matches finished (no more matches)
+        bool isFinished = false;
+
+        //keep clearing, collapsing and checking for matches until no further matches are made
+        while(isFinished == false)
+        {
+            //clear the pieces in the List passed in as an argument
+            ClearPieceAt(gamePieces);
+
+            //a small delay in between clearing and collapsing so our player can see what is going on
+            yield return new WaitForSeconds(0.25f);
+        }
+
+        yield return null;
     }
 }

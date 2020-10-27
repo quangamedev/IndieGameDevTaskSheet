@@ -65,6 +65,7 @@ public class GamePiece : MonoBehaviour
     //sets the x and y index by the arguments passed in 
     //called by PieceManager.PlaceGamePiece()
     //called by MoveRoutine() when a game piece is moved
+    //caled by PieceManager.CollapseColumn() when a match is made
     public void SetCoord(int x, int y)
     {
         xIndex = x; //set xIndex to the x value passed in by the function call
@@ -73,6 +74,7 @@ public class GamePiece : MonoBehaviour
 
     //calls the MoveRoutine below to move game pieces
     //called by PieceManager.SwitchTilesRoutine() to find whether swapped tiles are a match
+    //called by PieceManager.CollapseColumn() when a match is made
     public void Move(int destX, int destY, float timeToMove)
     {
         if (isMoving == false) //game pieces are not currently moving

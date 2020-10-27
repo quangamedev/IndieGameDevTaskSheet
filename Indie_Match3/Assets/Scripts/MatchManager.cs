@@ -42,6 +42,10 @@ public class MatchManager : MonoBehaviour
     //called by FindHorizontalMatches() to search for horizontal matches from the startPiece
     List<GamePiece> FindMatches(int startX, int startY, Vector2 searchDirection, int minLength = 3)
     {
+        //safety to make sure that we definitely have PieceManager and Board
+        pieceManager = GameObject.Find("PieceManager").GetComponent<PieceManager>();
+        board = GameObject.Find("Board").GetComponent<Board>();
+
         //create a list that will be returned  if an appropriate match is found
         List<GamePiece> matches = new List<GamePiece>();
 
@@ -301,7 +305,7 @@ public class MatchManager : MonoBehaviour
     }
 
     //checks the piece at x and y passed in and returns true if there is a match
-    //called by
+    //called by FillBoard() when game pieces are made at the start of the level
     public bool HasMatchOnFill(int x, int y, int minLength = 3)
     {
         //call FindMatches() to populate 2 Lists of matches to the left and down
@@ -316,6 +320,17 @@ public class MatchManager : MonoBehaviour
         if (downwardMatches == null)
         {
             downwardMatches = new List<GamePiece>();
+        }
+
+        //check whether leftMatches OR downwardMatches have anything in them
+        if(leftMatches.Count > 0 || downwardMatches.Count > 0)
+        {
+            //if they do, we have matches at this location so return true
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 }
