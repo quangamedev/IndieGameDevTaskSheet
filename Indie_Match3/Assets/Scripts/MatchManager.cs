@@ -304,6 +304,24 @@ public class MatchManager : MonoBehaviour
         return allMatches;
     }
 
+    //overloaded version of FindMatchesAt() above which receives a List and an int instead of 3 ints
+    //called by PieceManager.ClearAndCollapseRoutine() when looking for matches after a collapse
+    public List<GamePiece> FindMatchesAt(List<GamePiece> gamePieces, int minLength = 3)
+    {
+        //create a List of matching game pieces this function will return
+        List<GamePiece> matches = new List<GamePiece>();
+
+        //loop through the list of game pieces passed in
+        foreach(GamePiece piece in gamePieces)
+        {
+            //add each List of matches returned by the original
+            //FindMatchesAt() above to the current List of matches
+            matches = matches.Union(FindMatchesAt(piece.xIndex, piece.yIndex, minLength)).ToList();
+        }
+        //return the List of matches to the function calling this
+        return matches;
+    }
+
     //checks the piece at x and y passed in and returns true if there is a match
     //called by FillBoard() when game pieces are made at the start of the level
     public bool HasMatchOnFill(int x, int y, int minLength = 3)
@@ -313,7 +331,7 @@ public class MatchManager : MonoBehaviour
         List<GamePiece> downwardMatches = FindMatches(x, y, new Vector2(0, -1), minLength);
 
         //we cannot use List.Count on a null List, so if we didnt find matches, set our List to a new empty List so we dont get errors
-        if(leftMatches == null)
+        if (leftMatches == null)
         {
             leftMatches = new List<GamePiece>();
         }
@@ -323,7 +341,7 @@ public class MatchManager : MonoBehaviour
         }
 
         //check whether leftMatches OR downwardMatches have anything in them
-        if(leftMatches.Count > 0 || downwardMatches.Count > 0)
+        if (leftMatches.Count > 0 || downwardMatches.Count > 0)
         {
             //if they do, we have matches at this location so return true
             return true;

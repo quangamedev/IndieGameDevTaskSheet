@@ -311,14 +311,17 @@ public class PieceManager : MonoBehaviour
     //Overloaded version of ClearPieceAt(int x, int y) above
     //our programm will know which one to use, depending upon whether we pass in two ints or a List of GamePieces
     //clears out a List of GamePieces passed in as an argument
-    //called by SwitchTilesRoutine() to clear matches after a move
+    //called by ClearAndCollapseRoutine() to clear matches after a move
     void ClearPieceAt(List<GamePiece> gamePieces)
     {
         //loop through the List passed in
         foreach (GamePiece piece in gamePieces)
         {
+            if (piece != null)
+            {
             //call the original ClearPieceAt() and pass in the x and y of each piece in the List
             ClearPieceAt(piece.xIndex, piece.yIndex);
+            }
         }
     }
 
@@ -384,7 +387,7 @@ public class PieceManager : MonoBehaviour
     }
 
     //overloaded version of CollapseColum() which receives a List of gamepieces and returns a List of gamepieces containing the pieces that have moved
-    //called by SwitchTilesRoutine() after pieces are cleared
+    //called by ClearAndCollapseRoutine() after pieces are cleared
     List<GamePiece> CollapseColumn (List<GamePiece> gamePieces)
     {
         //make the List of moving game pieces we will return
@@ -425,7 +428,8 @@ public class PieceManager : MonoBehaviour
         return columns;
     }
 
-    //called by
+    //calls ClearAndRefillBoardRoutine() below to clear the board and refill it again after matches are made
+    //called by SwitchTilesRoutine() when matches are made
     void ClearAndRefillBoard(List<GamePiece> gamePieces)
     {
         //call the coroutine below
@@ -433,6 +437,7 @@ public class PieceManager : MonoBehaviour
     }
 
     //called by ClearAndRefillBoard() above when collapsing columns
+    //called by itself recursively when collapsing makes more matches
     IEnumerator ClearAndRefillBoardRoutine(List<GamePiece> gamePieces)
     {
         //clear and collapse
@@ -443,6 +448,7 @@ public class PieceManager : MonoBehaviour
         //refill the board
     }
 
+    //clears pieces from the board then collapses the board and checks for new matches
     //called by ClearAndRefillBoardRoutine() above
     IEnumerator ClearAndCollapseRoutine(List<GamePiece> gamePieces)
     {
@@ -466,8 +472,33 @@ public class PieceManager : MonoBehaviour
 
             //a small delay in between clearing and collapsing so our player can see what is going on
             yield return new WaitForSeconds(0.25f);
-        }
 
+            //call the overloaded version of CollapseColumns() to move the pieces down and set movingPieces to the list of moving pieces it returns
+            movingPieces = CollapseColumn(gamePieces);
+
+            //a small delay to give pieces time to collapse before looking for new matches on the board
+            yield return new WaitForSeconds(0.25f);
+
+            //find new matches at the position of the pieces that collapsed and store them in matches List
+            matches = matchManager.FindMatchesAt(movingPieces);
+
+            //if FindMatchesAt() returns an empty List
+            if(matches.Count == 0)
+            {
+                //break out of the loop and stop clearing and collapsing
+                isFinished = true;
+                break;
+            }
+            else //collapsing created new matches
+            {
+                //small pause so they player can see that there are new matches
+                yield return new WaitForSeconds(0.25f);
+
+                //have this function call itself and pass it a new List of matching pieces for it to clear and collapse
+                yield return StartCoroutine(ClearAndCollapseRoutine(matches));
+            }
+
+        }
         yield return null;
     }
 }
