@@ -27,6 +27,7 @@ public class PieceManager : MonoBehaviour
     private Tile clickedTile; //the tile that the playter clicks on first to move a game piece
     private Tile targetTile; //the tile that the player wants the game piece to move to
     public float swapTime = 0.5f; //the amount of time in seconds it takes for pieces to swap places
+    private bool playerInputEnabled = true; //used to disable player input while pieces are collapsing  
     // Start is called before the first frame update
     void Start()
     {
@@ -118,6 +119,7 @@ public class PieceManager : MonoBehaviour
 
     //fill the board with random game pieces
     //Called by Start()
+    //called by RefillRoutine() when pieces have finished collapsing
     public void FillBoard()
     {
         int maxLoops = 100; //the maximum amount of times we let our while loop go round
@@ -128,28 +130,32 @@ public class PieceManager : MonoBehaviour
         {
             for (int col = 0; col < board.height; col++)
             {
-                GamePiece piece = FillRandomAt(row, col);
-
-                //keep looping until the game piece at row, col has no matches
-                //HasMatchOnFill() returns true when the random piece made has matches
-                while(matchManager.HasMatchOnFill(row, col) == true)
+                //checks wether there is a piece at the postion in the array
+                if (allGamePieces[row, col] == null)
                 {
-                    //clear the starting piece that has matches
-                    ClearPieceAt(row, col);
+                    GamePiece piece = FillRandomAt(row, col);
 
-                    //place a new random game piece with FillRandomAt()
-                    piece = FillRandomAt(row, col);
-
-                    //add 1 to the number of loops
-                    loops++;
-
-                    //if we have done more than 100 loops
-                    if(loops > maxLoops)
+                    //keep looping until the game piece at row, col has no matches
+                    //HasMatchOnFill() returns true when the random piece made has matches
+                    while (matchManager.HasMatchOnFill(row, col) == true)
                     {
-                        //set the loops to 0 and break out of the loop
-                        loops = 0;
-                        Debug.LogWarning("WARNING: Fill board has exceeded the maximum loops!");
-                        break;
+                        //clear the starting piece that has matches
+                        ClearPieceAt(row, col);
+
+                        //place a new random game piece with FillRandomAt()
+                        piece = FillRandomAt(row, col);
+
+                        //add 1 to the number of loops
+                        loops++;
+
+                        //if we have done more than 100 loops
+                        if (loops > maxLoops)
+                        {
+                            //set the loops to 0 and break out of the loop
+                            loops = 0;
+                            Debug.LogWarning("WARNING: Fill board has exceeded the maximum loops!");
+                            break;
+                        }
                     }
                 }
             }
@@ -158,7 +164,7 @@ public class PieceManager : MonoBehaviour
 
     //puts a random game piece at the coordinates passed in as arguments
     //called by FillBoard() when the board is filled at the start of the game
-    private GamePiece FillRandomAt(int row, int col)
+    private GamePiece FillRandomAt(int row, int col, int yOffset = 0, float moveTime = 0.1f)
     {
         //instantiates the piece prefab at coordinates row n col
         //Instantiate() constructs an Object, so "as GameObject" casts it instead as a GameObject
@@ -184,6 +190,13 @@ public class PieceManager : MonoBehaviour
 
             //place the game piece on the current tile
             PlaceGamePiece(randomPiece.GetComponent<GamePiece>(), row, col);
+
+            //if we have passed in a yOffset
+            if (yOffset != 0)
+            {
+                //move the piece up in the y by the amount of yOffset
+                randomPiece.transform.position = new Vector3(row, col + yOffset, 0);
+            }
 
             //return the GamePiece to the function calling this
             return randomPiece.GetComponent<GamePiece>();
@@ -249,41 +262,43 @@ public class PieceManager : MonoBehaviour
     //called by SwitchTiles() above when two pieces are swapped
     IEnumerator SwitchTilesRoutine(Tile tileClicked, Tile tileTargeted)
     {
-        //set the pieces positions to the positions of the tiles
-        GamePiece clickedPiece = allGamePieces[tileClicked.xIndex, tileClicked.yIndex];
-        GamePiece targetPiece = allGamePieces[tileTargeted.xIndex, tileTargeted.yIndex];
-
-        //defensive programming to make sure that the pieces are valid
-        if (clickedPiece != null & targetPiece != null)
+        if (playerInputEnabled == true)
         {
-            //commits the swap by moving the two chosen pieces
-            clickedPiece.Move(targetPiece.xIndex, targetPiece.yIndex, swapTime);
-            targetPiece.Move(clickedPiece.xIndex, clickedPiece.yIndex, swapTime);
+            //set the pieces positions to the positions of the tiles
+            GamePiece clickedPiece = allGamePieces[tileClicked.xIndex, tileClicked.yIndex];
+            GamePiece targetPiece = allGamePieces[tileTargeted.xIndex, tileTargeted.yIndex];
 
-            //yield so the pieces can move and the array updates with the new positions
-            yield return new WaitForSeconds(swapTime);
-
-            //return a list of matches for the clicked and targeted piece
-            List<GamePiece> tileClickedMatches = matchManager.FindMatchesAt(tileClicked.xIndex, tileClicked.yIndex);
-            List<GamePiece> tileTargetedMatches = matchManager.FindMatchesAt(tileTargeted.xIndex, tileTargeted.yIndex);
-
-            //if neither of the lists have anything in them, we havent a match
-            if (tileClickedMatches.Count == 0 && tileTargetedMatches.Count == 0)
+            //defensive programming to make sure that the pieces are valid
+            if (clickedPiece != null & targetPiece != null)
             {
-                //move the tiles back to their orginal position
-                clickedPiece.Move(tileClicked.xIndex, tileClicked.yIndex, swapTime);
-                targetPiece.Move(tileTargeted.xIndex, tileTargeted.yIndex, swapTime);
-            }
-            else
-            {
-                //call ClearAndRefillBoard() and pass it a combined list of tileClickedMatches and tileTargetedMatches to clear
-                ClearAndRefillBoard(tileClickedMatches.Union(tileTargetedMatches).ToList());
-            }
+                //commits the swap by moving the two chosen pieces
+                clickedPiece.Move(targetPiece.xIndex, targetPiece.yIndex, swapTime);
+                targetPiece.Move(clickedPiece.xIndex, clickedPiece.yIndex, swapTime);
 
-            //yield so the pieces can move back and the array updates with the new positions
-            yield return new WaitForSeconds(swapTime);
+                //yield so the pieces can move and the array updates with the new positions
+                yield return new WaitForSeconds(swapTime);
+
+                //return a list of matches for the clicked and targeted piece
+                List<GamePiece> tileClickedMatches = matchManager.FindMatchesAt(tileClicked.xIndex, tileClicked.yIndex);
+                List<GamePiece> tileTargetedMatches = matchManager.FindMatchesAt(tileTargeted.xIndex, tileTargeted.yIndex);
+
+                //if neither of the lists have anything in them, we havent a match
+                if (tileClickedMatches.Count == 0 && tileTargetedMatches.Count == 0)
+                {
+                    //move the tiles back to their orginal position
+                    clickedPiece.Move(tileClicked.xIndex, tileClicked.yIndex, swapTime);
+                    targetPiece.Move(tileTargeted.xIndex, tileTargeted.yIndex, swapTime);
+                }
+                else
+                {
+                    //call ClearAndRefillBoard() and pass it a combined list of tileClickedMatches and tileTargetedMatches to clear
+                    ClearAndRefillBoard(tileClickedMatches.Union(tileTargetedMatches).ToList());
+                }
+
+                //yield so the pieces can move back and the array updates with the new positions
+                yield return new WaitForSeconds(swapTime);
+            }
         }
-
         //after the pieces have moved, highlight the tiles of any matches
 
     }
@@ -359,7 +374,7 @@ public class PieceManager : MonoBehaviour
                     if(allGamePieces[column, j] != null)
                     {
                         //move the first valid game piece j finds to the y value of the first empty space stored in i
-                        allGamePieces[column, j].Move(column, i, collapseTime);
+                        allGamePieces[column, j].Move(column, i, collapseTime * (j - i));
 
                         //in order to add the right piece into the List, we cant wair for GamePiece.MoveRoutine() to update the array and call SetCoord(),
                         //which happens after the move is finished. So we do it manually here
@@ -436,16 +451,31 @@ public class PieceManager : MonoBehaviour
         StartCoroutine(ClearAndRefillBoardRoutine(gamePieces));
     }
 
+    //called by ClearAndRefillBoard() when all the collapsing has ended
+    IEnumerator RefillRoutine()
+    {
+        FillBoard();
+        yield return null;
+    }
+
     //called by ClearAndRefillBoard() above when collapsing columns
     //called by itself recursively when collapsing makes more matches
     IEnumerator ClearAndRefillBoardRoutine(List<GamePiece> gamePieces)
     {
-        //clear and collapse
-        StartCoroutine(ClearAndCollapseRoutine(gamePieces));
+        //disable player input
+        playerInputEnabled = false;
 
+        //clear and collapse
+        //adding yield return ensures the coroutine is finished before continuing on with this function
+        yield return StartCoroutine(ClearAndCollapseRoutine(gamePieces));
         yield return null; //wait until it is finished
 
         //refill the board
+        //adding yield return ensures that the coroutine is finished before continuing on with this fucntion
+        yield return StartCoroutine(RefillRoutine());
+
+        //re enable input
+        playerInputEnabled = true;
     }
 
     //clears pieces from the board then collapses the board and checks for new matches
@@ -476,6 +506,13 @@ public class PieceManager : MonoBehaviour
             //call the overloaded version of CollapseColumns() to move the pieces down and set movingPieces to the list of moving pieces it returns
             movingPieces = CollapseColumn(gamePieces);
 
+            //check if the pieces have finished collapsing
+            while (IsCollapsed(movingPieces) == false)
+            {
+                //if not, wait for 1 frame
+                yield return null;
+            }
+
             //a small delay to give pieces time to collapse before looking for new matches on the board
             yield return new WaitForSeconds(0.25f);
 
@@ -500,5 +537,24 @@ public class PieceManager : MonoBehaviour
 
         }
         yield return null;
+    }
+
+    //finds out if pieces are at their destination yet and returns true if they have stopped moving
+    //called by ClearAndCollapseRoutine() to delay looking for matches until collapsing has finished
+    bool IsCollapsed(List<GamePiece> gamePieces)
+    {
+        foreach (GamePiece piece in gamePieces)
+        {
+            if (piece != null)
+            {
+                //check the piece's y position to see if its different from its xIndex by subtracting one from another
+                if(piece.transform.position.y - (float) piece.yIndex > 0.0001f)
+                {
+                    //the piece is  still moving
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
