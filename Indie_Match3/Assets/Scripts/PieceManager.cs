@@ -4,6 +4,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 using System.Linq; //used to we can combine lists into a single list using the Union() method
 using System.Runtime.CompilerServices;
+using UnityEditor;
 
 /***********************************
 Author: Quan Nguyen
@@ -27,7 +28,21 @@ public class PieceManager : MonoBehaviour
     private Tile clickedTile; //the tile that the playter clicks on first to move a game piece
     private Tile targetTile; //the tile that the player wants the game piece to move to
     public float swapTime = 0.5f; //the amount of time in seconds it takes for pieces to swap places
-    private bool playerInputEnabled = true; //used to disable player input while pieces are collapsing  
+    private bool playerInputEnabled = true; //used to disable player input while pieces are collapsing
+    public StartingObject[] startingGamePieces; //an array of pieces that use the nested class StartingObject
+    public int fillYOffset = 10; //how high pieces drop down
+    public float fillMoveTime = 0.1f; //how fast pieces drop off screen
+
+    //Nested class that defines specific game pieces we want on the board
+    [System.Serializable]
+    public class StartingObject
+    {
+        public GameObject prefab;
+        public int x;
+        public int y;
+        public int z;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -35,7 +50,7 @@ public class PieceManager : MonoBehaviour
         matchManager = GameObject.Find("MatchManager").GetComponent<MatchManager>(); //store the MatchManager class
         allGamePieces = new GamePiece[board.width, board.height]; //constructs a new array of size width by height
 
-        FillBoard(); //Fills the board with random pieces at the start of the level
+        FillBoard(fillYOffset, fillMoveTime); //Fills the board with random pieces at the start of the level
     }
 
     //returns a random GameObject from the gamePiecesPrefabs array 
@@ -90,6 +105,8 @@ public class PieceManager : MonoBehaviour
     //Called by PlaceGamePiece() above when adding a piece to the allGamePieces array
     //called by MatchManager.FindMatches() to check the piece we start the search from is whithin the board
     //called by MatchManager.FindMatches() to check whether the next piece we are checking for matches is within the board
+    //called by MakeGamePiece() when a new piece is placed
+    //called by FillRandomAt() when instantiating a game piece
     public bool IsWithinBounds(int x, int y)
     {
         //checks to make sure x is between 0 between 0 and the width -1 and y is whitin 0 and height -1
@@ -120,7 +137,7 @@ public class PieceManager : MonoBehaviour
     //fill the board with random game pieces
     //Called by Start()
     //called by RefillRoutine() when pieces have finished collapsing
-    public void FillBoard()
+    public void FillBoard(int yOffset = 0, float moveTime = 0.1f)
     {
         int maxLoops = 100; //the maximum amount of times we let our while loop go round
         int loops = 0; //the number of times while has looped so far
@@ -133,7 +150,7 @@ public class PieceManager : MonoBehaviour
                 //checks wether there is a piece at the postion in the array
                 if (allGamePieces[row, col] == null)
                 {
-                    GamePiece piece = FillRandomAt(row, col);
+                    GamePiece piece = FillRandomAt(row, col, yOffset, moveTime);
 
                     //keep looping until the game piece at row, col has no matches
                     //HasMatchOnFill() returns true when the random piece made has matches
@@ -143,7 +160,7 @@ public class PieceManager : MonoBehaviour
                         ClearPieceAt(row, col);
 
                         //place a new random game piece with FillRandomAt()
-                        piece = FillRandomAt(row, col);
+                        piece = FillRandomAt(row, col, yOffset, moveTime);
 
                         //add 1 to the number of loops
                         loops++;
@@ -162,44 +179,77 @@ public class PieceManager : MonoBehaviour
         }
     }
 
-    //puts a random game piece at the coordinates passed in as arguments
+    //Instatiates a random piece and then calls MakeGamePiece() to place it
     //called by FillBoard() when the board is filled at the start of the game
     private GamePiece FillRandomAt(int row, int col, int yOffset = 0, float moveTime = 0.1f)
     {
+        if(IsWithinBounds(row, col) == true)
+        {
         //instantiates the piece prefab at coordinates row n col
         //Instantiate() constructs an Object, so "as GameObject" casts it instead as a GameObject
         GameObject randomPiece = Instantiate(GetRandomGamePiece()) as GameObject;
 
+        //place the random piece at the row and col passed in
+        return MakeGamePiece(randomPiece, row, col, yOffset, moveTime);
+        }
+        return null;
+    }
+
+    //Instantiates pieces from the startingGamePieces array then calls MakeGamePiece() to place them at the x and y defined in the inspector
+    //called by
+    void SetupGamePieces()
+    {
+        //loop through the startGamePieces array defined in the Inspector panel
+        foreach(StartingObject sPiece in startingGamePieces)
+        {
+            if(sPiece != null && IsWithinBounds(sPiece.x, sPiece.y) == true)
+            {
+                //instantiate the next piece in the array
+                GameObject startingPiece = Instantiate(sPiece.prefab, new Vector3(sPiece.x, sPiece.y, 0), Quaternion.identity) as GameObject;
+
+                //call MakeGamePiece() to place it on the board
+                MakeGamePiece(startingPiece, sPiece.x, sPiece.y, fillYOffset, fillMoveTime);
+            }
+        }
+    }
+
+    //puts a game piece passed in at the coordinates also passed in as argunments
+    //called by FillRandomAt() to fill the whole board at the start of the game
+    private GamePiece MakeGamePiece(GameObject prefab, int row, int col, int yOffset = 0, float moveTime = 0.1f)
+    {
         //defensive programming to make sure that randomPiece is a valid GamePiece
-        if (randomPiece != null)
+        if (prefab != null && IsWithinBounds(row, col) == true)
         {
             //set the piece name to it's
-            randomPiece.name = "Pieces (" + row + "," + col + ")";
+            prefab.name = "Pieces (" + row + "," + col + ")";
 
             //store the gamePiecePrefabs GamePiece script at the appropriate position in the array
-            allGamePieces[row, col] = randomPiece.GetComponent<GamePiece>();
+            allGamePieces[row, col] = prefab.GetComponent<GamePiece>();
 
             //set the game pieces sorting layer to Pieces so they appear in front of the tiles
-            randomPiece.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
+            prefab.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
 
             //To keep things tidy, parent the tiles to the randomPieces object in the Hierachy
-            randomPiece.transform.parent = GameObject.Find("Pieces").transform;
+            prefab.transform.parent = GameObject.Find("Pieces").transform;
 
             //initialises the GamePiece to give it access to the PieceManager
-            randomPiece.GetComponent<GamePiece>().Init(this);
+            prefab.GetComponent<GamePiece>().Init(this);
 
-            //place the game piece on the current tile
-            PlaceGamePiece(randomPiece.GetComponent<GamePiece>(), row, col);
+            //place the game piece on the tile with row and col passed in
+            PlaceGamePiece(prefab.GetComponent<GamePiece>(), row, col);
 
             //if we have passed in a yOffset
             if (yOffset != 0)
             {
                 //move the piece up in the y by the amount of yOffset
-                randomPiece.transform.position = new Vector3(row, col + yOffset, 0);
+                prefab.transform.position = new Vector3(row, col + yOffset, 0);
+
+                //move the piece back down to its proper tile using the pieces Move() method
+                prefab.GetComponent<GamePiece>().Move(row, col, moveTime);
             }
 
             //return the GamePiece to the function calling this
-            return randomPiece.GetComponent<GamePiece>();
+            return prefab.GetComponent<GamePiece>();
         }
         return null;
     }
@@ -454,7 +504,7 @@ public class PieceManager : MonoBehaviour
     //called by ClearAndRefillBoard() when all the collapsing has ended
     IEnumerator RefillRoutine()
     {
-        FillBoard();
+        FillBoard(fillYOffset, fillMoveTime);
         yield return null;
     }
 
