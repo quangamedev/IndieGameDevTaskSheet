@@ -32,6 +32,12 @@ public class PieceManager : MonoBehaviour
     public StartingObject[] startingGamePieces; //an array of pieces that use the nested class StartingObject
     public int fillYOffset = 10; //how high pieces drop down
     public float fillMoveTime = 0.1f; //how fast pieces drop off screen
+    public GameObject[] areaBombs;
+    public GameObject[] horizontalBombs;
+    public GameObject[] verticalBombs;
+
+    public bool foundHorizontalMatches = false; //whether the horizontal matches were found this time
+    public bool foundVerticalMatches = false;//whether the vertical matches were found this time
 
     //Nested class that defines specific game pieces we want on the board
     [System.Serializable]
@@ -50,6 +56,7 @@ public class PieceManager : MonoBehaviour
         matchManager = GameObject.Find("MatchManager").GetComponent<MatchManager>(); //store the MatchManager class
         allGamePieces = new GamePiece[board.width, board.height]; //constructs a new array of size width by height
 
+        SetupGamePieces();
         FillBoard(fillYOffset, fillMoveTime); //Fills the board with random pieces at the start of the level
     }
 
@@ -196,7 +203,7 @@ public class PieceManager : MonoBehaviour
     }
 
     //Instantiates pieces from the startingGamePieces array then calls MakeGamePiece() to place them at the x and y defined in the inspector
-    //called by
+    //called by Start()
     void SetupGamePieces()
     {
         //loop through the startGamePieces array defined in the Inspector panel
@@ -547,6 +554,24 @@ public class PieceManager : MonoBehaviour
         //keep clearing, collapsing and checking for matches until no further matches are made
         while(isFinished == false)
         {
+            //find the pieces affected by bombs
+            List<GamePiece> bombedPieces = GetBombedPieces(gamePieces);
+
+            //merge the list of matches to clear and the list of bombed pieces to clear
+            gamePieces = gamePieces.Union(bombedPieces).ToList();
+
+            //check the total List to see if our bomb has triggered a second bomb
+            bombedPieces = GetBombedPieces(gamePieces);
+
+            //merge the list of matches to clear and the list of bombed pieces to clear
+            gamePieces = gamePieces.Union(bombedPieces).ToList();
+
+            //check the total List to see if our bomb has triggered a third bomb
+            bombedPieces = GetBombedPieces(gamePieces);
+
+            //merge the list of matches to clear and the list of bombed pieces to clear
+            gamePieces = gamePieces.Union(bombedPieces).ToList();
+
             //clear the pieces in the List passed in as an argument
             ClearPieceAt(gamePieces);
 
@@ -606,5 +631,112 @@ public class PieceManager : MonoBehaviour
             }
         }
         return true;
+    }
+
+    //returns a List of all game pieces in a row passed in as argument
+    //called by GetBombedPieces() when a vertical bomb is activated
+    List<GamePiece> GetRowPieces(int row)
+    {
+        //create the List that we will return
+        List<GamePiece> gamePieces = new List<GamePiece>();
+
+        //loop through the width of the board
+        for (int i = 0; i < board.width; i++)
+        {
+            //safety check to make sure there is a piece on the tile
+            if(allGamePieces[i, row] != null)
+            {
+                //add the piece to the List of game pieces on that row
+                gamePieces.Add(allGamePieces[i, row]);
+            }
+        }
+        return gamePieces;
+    }
+
+    //returns a List of all game pieces in a column passed in as argument
+    //called by GetBombedPieces() when a horizontal bomb is activated
+    List<GamePiece> GetColumnPieces(int column)
+    {
+        //create the List that we will return
+        List<GamePiece> gamePieces = new List<GamePiece>();
+        
+        //loop through the height of the board
+        for (int i = 0; i < board.height; i++)
+        {
+            //safety check to make sure there is a piece on the tile
+            if(allGamePieces[column, i] != null)
+            {
+                //add the piece to the List of game pieces on that column
+                gamePieces.Add(allGamePieces[column, i]);
+            }
+        }
+        return gamePieces;
+    }
+
+    //returns a List of all pieces adjacent to the bombX and bombY passed in
+    //called by GetBombedPieces() when an area bomb is activated
+    List<GamePiece> GetAdjacentPieces (int bombX, int bombY, int bombRange = 1)
+    {
+        //create the List that we will return
+        List<GamePiece> gamePieces = new List<GamePiece>();
+
+        //create a for loop that goes from -1 (default value) in the x to +1 in the x
+        //and -1 in the y to +1 in the y. If we change bombRange, there will be more adjacent tiles to check
+        for (int x = bombX - bombRange; x <= bombX + bombRange; x++)
+        {
+            for (int y = bombY - bombRange; y <= bombY + bombRange; y++)
+            {
+                //defensive programming to make sure all adjacent pieces are on the board
+                if (IsWithinBounds(x, y) == true)
+                {
+                    //if they are on the board, add them to the List we return
+                    gamePieces.Add(allGamePieces[x, y]);
+                }
+            }
+        }
+        return gamePieces;
+    }
+
+    //receives a List of matching pieces and checks to see if any are bombs
+    //if it finds bombs it returns a List of which pieces are affected by them
+    //called by ClearAndCollapseRoutine()
+    List<GamePiece> GetBombedPieces(List<GamePiece> gamePieces)
+    {
+        //The List of all pieces that ClearAndCollapseRoutine() will clear passed in as arguments affected by bombs
+        List<GamePiece> allPiecesToClear = new List<GamePiece>();
+
+        //loop through the List of game pieces that ClearAndCollapseRoutine() is about to clear, passed in as an argument to this function
+        foreach (GamePiece piece in gamePieces)
+        {
+            if(piece != null)
+            {
+                //creates a List of bombed pieces on this individual piece
+                List<GamePiece> piecesToClear = new List<GamePiece>();
+
+                //create a var to see if it is a bomb so we can find out its type of bomb
+                Bomb bomb = piece.GetComponent<Bomb>();
+
+                //if bomb isnt null, the piece is a bomb
+                if (bomb != null)
+                {
+                    //check bomb type
+                    switch (bomb.bombType)
+                    {
+                        case BombType.Vertical:
+                            piecesToClear = GetColumnPieces(bomb.xIndex);
+                            break;
+                        case BombType.Horizontal:
+                            piecesToClear = GetRowPieces(bomb.yIndex);
+                            break;
+                        case BombType.Area:
+                            piecesToClear = GetAdjacentPieces(bomb.xIndex, bomb.yIndex);
+                            break;
+                    }
+                    //merge our pieces to clear List with our master List of allPiecesToClear
+                    allPiecesToClear = allPiecesToClear.Union(piecesToClear).ToList();
+                }
+            }
+        }
+        return allPiecesToClear;
     }
 }
