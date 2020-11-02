@@ -282,9 +282,36 @@ public class MatchManager : MonoBehaviour
     //called by PieceManager.SwitchTilesRoutine() to find whether the swapped tiles are a match
     public List<GamePiece> FindMatchesAt(int x, int y, int minLength = 3)
     {
+        //make 2 new Lists to ensure that horizMatches and vertMatches are empty
+        List<GamePiece> horizMatches = new List<GamePiece>();
+        List<GamePiece> vertiMatches = new List<GamePiece>();
+
         //declares and populate the lists to hold horizontal and vertical matches
-        List<GamePiece> horizMatches = FindHorizontalMatches(x, y, 3);
-        List<GamePiece> vertiMatches = FindVerticalMatches(x, y, 3);
+        horizMatches = FindHorizontalMatches(x, y, minLength);
+        vertiMatches = FindVerticalMatches(x, y, minLength);
+
+        //if the List has pieces in
+        if(horizMatches != null)
+        {
+            //if the pieces are a legitimate match
+            if (horizMatches.Count >= minLength)
+            {
+                //set the bool to true so we know to make a horizontal bomb
+                pieceManager.foundHorizontalMatches = true;
+            }
+        }
+
+        //if the List has pieces in
+        if(vertiMatches != null)
+        {
+            //if the pieces are a legitimate match
+            if(vertiMatches.Count >= minLength)
+            {
+                //set the bool to true so we know to make a vertical bomb
+                pieceManager.foundVerticalMatches = true;
+            }
+        }
+
 
         //we cannot use the System.Linq.Union() method to combine to Lists if any of them are null
         //so if they are null, we need to set them to empty Lists

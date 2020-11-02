@@ -522,6 +522,26 @@ public class PieceManager : MonoBehaviour
         //disable player input
         playerInputEnabled = false;
 
+        //set in MatchManager.FindMatchesAt()
+        if (foundHorizontalMatches == true)
+        {
+            //if there are 4 or more matches we make a horizontal bomb
+            if(gamePieces.Count > 3)
+            {
+                //make horizontal bomb
+            }
+        }
+
+        //set in MatchManager.FindMatchesAt()
+        if (foundVerticalMatches == true)
+        {
+            //if there are 4 or more matches we make a vertical bomb
+            if (gamePieces.Count > 3)
+            {
+                //make vertical bomb
+            }
+        }
+
         //clear and collapse
         //adding yield return ensures the coroutine is finished before continuing on with this function
         yield return StartCoroutine(ClearAndCollapseRoutine(gamePieces));
@@ -738,5 +758,27 @@ public class PieceManager : MonoBehaviour
             }
         }
         return allPiecesToClear;
+    }
+
+    //clears a piece and puts a bomb on the board in its place
+    //called by ClearAndRefillBoardRoutine()
+    void MakeBomb(string bombToMake)
+    {
+        //get random coordinates to place the bomb
+        int randomX = Random.Range((int)0, (int)board.width);
+        int randomY = Random.Range((int)0, (int)board.height);
+
+        //safety check for our random cooridnates
+        if (IsWithinBounds(randomX, randomY) == true)
+        {
+            //destroys the game piece at the x and y coordinates and removes it from the array
+            ClearPieceAt(randomX, randomY);
+        }
+
+        //checks whether the string passed in indicates a horizontal bomb
+        if(bombToMake == "horizontal")
+        {
+
+        }
     }
 }
