@@ -547,8 +547,10 @@ public class PieceManager : MonoBehaviour
         //create a var for to check its match value in the matched game pieces
         GamePiece piece = gamePieces[0].GetComponent<GamePiece>();
 
+        //a string to store the matchvalue of the pieces
         string matchValue = "";
 
+        //switch statement to check the matchvalue of the pieces
         switch (piece.matchValue)
         {
             case GamePiece.MatchValue.blue:
@@ -817,7 +819,7 @@ public class PieceManager : MonoBehaviour
 
     //clears a piece and puts a bomb on the board in its place
     //called by ClearAndRefillBoardRoutine()
-    void MakeBomb(string bombToMake, string bombColor)
+    void MakeBomb(string bombToMake, string matchValue)
     {
         //get random coordinates to place the bomb
         int randomX = Random.Range((int)0, (int)board.width);
@@ -830,14 +832,37 @@ public class PieceManager : MonoBehaviour
             ClearPieceAt(randomX, randomY);
         }
 
+        //an Index to store the matchValue of the bomb that we will create
+        int bombIndex = 0;
+
+        //checks the matchValue of the pieces that made a match
+        switch (matchValue)
+        {
+            case "blue":
+                bombIndex = 0;
+                break;
+            case "green":
+                bombIndex = 1;
+                break;
+            case "orange":
+                bombIndex = 2;
+                break;
+            case "purple":
+                bombIndex = 3;
+                break;
+            case "red":
+                bombIndex = 4;
+                break;
+            case "yellow":
+                bombIndex = 5;
+                break;
+        }
+
         //checks whether the string passed in indicates a horizontal bomb
         if(bombToMake == "horizontal")
         {
-            //get a random indedxd in the horizontalBombs array
-            int randomBombIndex = Random.Range((int)0, (int)horizontalBombs.Length);
-
             //instantiate a random horizontal bomb at the random x and y
-            GameObject bomb = Instantiate(horizontalBombs[randomBombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
+            GameObject bomb = Instantiate(horizontalBombs[bombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
 
             //pass the bomb the PieceManager script using the Init on GamePiece it inherits
             bomb.GetComponent<Bomb>().Init(this);
@@ -858,11 +883,8 @@ public class PieceManager : MonoBehaviour
         }
         else if (bombToMake == "vertical")
         {
-            //get a random indedxd in the verticalBombs array
-            int randomBombIndex = Random.Range((int)0, (int)verticalBombs.Length);
-
             //instantiate a random vertical bomb at the random x and y
-            GameObject bomb = Instantiate(verticalBombs[randomBombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
+            GameObject bomb = Instantiate(verticalBombs[bombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
 
             //pass the bomb the PieceManager script using the Init on GamePiece it inherits
             bomb.GetComponent<Bomb>().Init(this);
@@ -883,11 +905,8 @@ public class PieceManager : MonoBehaviour
         }
         else if (bombToMake == "area")
         {
-            //get a random indedxd in the areaBombs array
-            int randomBombIndex = Random.Range((int)0, (int)areaBombs.Length);
-
             //instantiate a random area bomb at the random x and y
-            GameObject bomb = Instantiate(areaBombs[randomBombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
+            GameObject bomb = Instantiate(areaBombs[bombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
 
             //pass the bomb the PieceManager script using the Init on GamePiece it inherits
             bomb.GetComponent<Bomb>().Init(this);
