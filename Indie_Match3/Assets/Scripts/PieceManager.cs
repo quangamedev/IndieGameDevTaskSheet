@@ -285,7 +285,7 @@ public class PieceManager : MonoBehaviour
             //sets the target tile to the tile passed in
             targetTile = tile;
 
-            Debug.Log("Clicked tile" + tile.name);
+            //Debug.Log("Clicked tile" + tile.name);
         }
     }
 
@@ -522,23 +522,74 @@ public class PieceManager : MonoBehaviour
         //disable player input
         playerInputEnabled = false;
 
-        //set in MatchManager.FindMatchesAt()
-        if (foundHorizontalMatches == true)
+        ////set in MatchManager.FindMatchesAt()
+        //if (foundHorizontalMatches == true)
+        //{
+        //    //if there are 4 or more matches we make a horizontal bomb
+        //    if(gamePieces.Count > 4)
+        //    {
+        //        //make horizontal bomb
+        //        MakeBomb("horizontal");
+        //    }
+        //}
+
+        ////set in MatchManager.FindMatchesAt()
+        //if (foundVerticalMatches == true)
+        //{
+        //    //if there are 4 or more matches we make a vertical bomb
+        //    if (gamePieces.Count > 4)
+        //    {
+        //        //make vertical bomb
+        //        MakeBomb("vertical");
+        //    }
+        //}
+
+        //create a var for to check its match value in the matched game pieces
+        GamePiece piece = gamePieces[0].GetComponent<GamePiece>();
+
+        string matchValue = "";
+
+        switch (piece.matchValue)
         {
-            //if there are 4 or more matches we make a horizontal bomb
-            if(gamePieces.Count > 3)
-            {
-                //make horizontal bomb
-            }
+            case GamePiece.MatchValue.blue:
+                matchValue = "blue";
+                break;
+            case GamePiece.MatchValue.green:
+                matchValue = "green";
+                break;
+            case GamePiece.MatchValue.orange:
+                matchValue = "orange";
+                break;
+            case GamePiece.MatchValue.purple:
+                matchValue = "purple";
+                break;
+            case GamePiece.MatchValue.red:
+                matchValue = "red";
+                break;
+            case GamePiece.MatchValue.yellow:
+                matchValue = "yellow";
+                break;
         }
 
-        //set in MatchManager.FindMatchesAt()
-        if (foundVerticalMatches == true)
+        //if there are 5 or more matches we make an area bomb
+        if (gamePieces.Count > 4)
         {
-            //if there are 4 or more matches we make a vertical bomb
-            if (gamePieces.Count > 3)
+            MakeBomb("area", matchValue);
+        }
+        //if there are 4 or more matches we make a vertical or a horizontal bomb
+        else if (gamePieces.Count == 4)
+        {
+            //set in MatchManager.FindMatchesAt()
+            if (foundHorizontalMatches == true)
+            {
+                //make horizontal bomb
+                MakeBomb("horizontal", matchValue);
+            }
+            //set in MatchManager.FindMatchesAt()
+            else if (foundVerticalMatches == true)
             {
                 //make vertical bomb
+                MakeBomb("vertical", matchValue);
             }
         }
 
@@ -594,6 +645,10 @@ public class PieceManager : MonoBehaviour
 
             //clear the pieces in the List passed in as an argument
             ClearPieceAt(gamePieces);
+
+            //reset the bools ready for the next turn
+            foundVerticalMatches = false;
+            foundHorizontalMatches = false;
 
             //a small delay in between clearing and collapsing so our player can see what is going on
             yield return new WaitForSeconds(0.25f);
@@ -749,7 +804,7 @@ public class PieceManager : MonoBehaviour
                             piecesToClear = GetRowPieces(bomb.yIndex);
                             break;
                         case BombType.Area:
-                            piecesToClear = GetAdjacentPieces(bomb.xIndex, bomb.yIndex);
+                            piecesToClear = GetAdjacentPieces(bomb.xIndex, bomb.yIndex, 2);
                             break;
                     }
                     //merge our pieces to clear List with our master List of allPiecesToClear
@@ -762,7 +817,7 @@ public class PieceManager : MonoBehaviour
 
     //clears a piece and puts a bomb on the board in its place
     //called by ClearAndRefillBoardRoutine()
-    void MakeBomb(string bombToMake)
+    void MakeBomb(string bombToMake, string bombColor)
     {
         //get random coordinates to place the bomb
         int randomX = Random.Range((int)0, (int)board.width);
@@ -778,7 +833,78 @@ public class PieceManager : MonoBehaviour
         //checks whether the string passed in indicates a horizontal bomb
         if(bombToMake == "horizontal")
         {
+            //get a random indedxd in the horizontalBombs array
+            int randomBombIndex = Random.Range((int)0, (int)horizontalBombs.Length);
 
+            //instantiate a random horizontal bomb at the random x and y
+            GameObject bomb = Instantiate(horizontalBombs[randomBombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
+
+            //pass the bomb the PieceManager script using the Init on GamePiece it inherits
+            bomb.GetComponent<Bomb>().Init(this);
+
+            //call SetCoord to pass it an xIndex and a yIndex
+            bomb.GetComponent<Bomb>().SetCoord(randomX, randomY);
+
+            //parent the bomb to the Pieces game object in the hierarchy
+            bomb.transform.parent = GameObject.Find("Pieces").transform;
+
+            //put the bomb on the Pieces sorting layer in front of the tile
+            bomb.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
+
+            //add the bomb to the allGamePieces array
+            allGamePieces[randomX, randomY] = bomb.GetComponent<GamePiece>();
+
+            Debug.Log("Made a horizontal bomb at " + randomX + ":" + randomY);
+        }
+        else if (bombToMake == "vertical")
+        {
+            //get a random indedxd in the verticalBombs array
+            int randomBombIndex = Random.Range((int)0, (int)verticalBombs.Length);
+
+            //instantiate a random vertical bomb at the random x and y
+            GameObject bomb = Instantiate(verticalBombs[randomBombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
+
+            //pass the bomb the PieceManager script using the Init on GamePiece it inherits
+            bomb.GetComponent<Bomb>().Init(this);
+
+            //call SetCoord to pass it an xIndex and a yIndex
+            bomb.GetComponent<Bomb>().SetCoord(randomX, randomY);
+
+            //parent the bomb to the Pieces game object in the hierarchy
+            bomb.transform.parent = GameObject.Find("Pieces").transform;
+
+            //put the bomb on the Pieces sorting layer in front of the tile
+            bomb.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
+
+            //add the bomb to the allGamePieces array
+            allGamePieces[randomX, randomY] = bomb.GetComponent<GamePiece>();
+
+            Debug.Log("Made a vertical bomb at " + randomX + ":" + randomY);
+        }
+        else if (bombToMake == "area")
+        {
+            //get a random indedxd in the areaBombs array
+            int randomBombIndex = Random.Range((int)0, (int)areaBombs.Length);
+
+            //instantiate a random area bomb at the random x and y
+            GameObject bomb = Instantiate(areaBombs[randomBombIndex], new Vector3(randomX, randomY, 0), Quaternion.identity) as GameObject;
+
+            //pass the bomb the PieceManager script using the Init on GamePiece it inherits
+            bomb.GetComponent<Bomb>().Init(this);
+
+            //call SetCoord to pass it an xIndex and a yIndex
+            bomb.GetComponent<Bomb>().SetCoord(randomX, randomY);
+
+            //parent the bomb to the Pieces game object in the hierarchy
+            bomb.transform.parent = GameObject.Find("Pieces").transform;
+
+            //put the bomb on the Pieces sorting layer in front of the tile
+            bomb.GetComponent<SpriteRenderer>().sortingLayerName = "Pieces";
+
+            //add the bomb to the allGamePieces array
+            allGamePieces[randomX, randomY] = bomb.GetComponent<GamePiece>();
+
+            Debug.Log("Made a area bomb at " + randomX + ":" + randomY);
         }
     }
 }
